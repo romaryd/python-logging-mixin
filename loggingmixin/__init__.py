@@ -10,7 +10,7 @@ import logging.config
 import getpass
 import warnings
 
-__version__ = '0.1.0'
+__version__ = '0.1.2'
 ISO8601_DATETIME = "%Y-%m-%dT%H:%M:%S%z"
 
 CONFIGURATION = {
