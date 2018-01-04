@@ -173,4 +173,4 @@ class LoggingMixin(object):
         """
         if not hasattr(self, '_logger') or not self._logger:
             self._logger = ServiceLogger()
-            return self._logger
+        return self._logger
