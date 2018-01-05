@@ -10,7 +10,7 @@ import logging.config
 import getpass
 import warnings
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 ISO8601_DATETIME = "%Y-%m-%dT%H:%M:%S%z"
 
 CONFIGURATION = {
@@ -19,7 +19,7 @@ CONFIGURATION = {
 
     'formatters': {
         'simple': {
-            'format': '%(name)s %(levelname)s [%(asctime)s] -- %(message)s',
+            'format': '%(name)s %(user)s %(levelname)s [%(asctime)s] -- %(message)s',
             'datefmt': ISO8601_DATETIME,
         }
     },
@@ -31,31 +31,27 @@ CONFIGURATION = {
         },
 
         'console': {
-            'level': 'DEBUG',
+            'level': os.environ.get('LOGGING_CONSOLE_LEVEL', 'DEBUG'),
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
 
         'logfile': {
-            'level': 'INFO',
+            'level': os.environ.get('LOGGING_FILE_LEVEL', 'INFO'),
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.environ.get('LOGGING_FILE', 'DEBUG'),
+            'filename': os.environ.get('LOGGING_FILE', 'LOG'),
             'maxBytes': 536870912,  # 512 MB
             'formatter': 'simple',
         }
     },
 
     'loggers': {
-        'lifoid': {
+        '{}'.format(os.environ.get('LOGGING_SERVICE', 'process')): {
             'level': os.environ.get('LOGGING_LEVEL', 'DEBUG'),
-            'handlers': ['logfile'],
-            'propagagte': True,
-        },
-        'lifoid.service': {
-            'level': os.environ.get('LOGGING_LEVEL', 'DEBUG'),
-            'handlers': ['logfile', 'console'],
-            'propagate': False,
-        },
+            'handlers': os.environ.get('LOGGING_HANDLERS',
+                                       'console').split(','),
+            'propagate': 0,
+        }
     },
 }
 
@@ -66,7 +62,7 @@ if os.environ.get('LOGGING_DEBUG', 'yes') == 'yes':
 
 class WrappedLogger(object):
     """
-    Wraps the Python logging module's logger object to ensure that all lifoid
+    Wraps the Python logging module's logger object to ensure that all process
     logging happens with the correct configuration as well as any extra
     information that might be required by the log file (for example, the user
     on the machine, hostname, IP address lookup, etc).
@@ -136,7 +132,7 @@ class ServiceLogger(WrappedLogger):
     """
 
     logger = logging.getLogger(os.environ.get('LOGGING_SERVICE',
-                                              'service'))
+                                              'process'))
 
     def __init__(self, **kwargs):
         self._user = kwargs.pop('user', None)
@@ -146,7 +142,7 @@ class ServiceLogger(WrappedLogger):
     def user(self):
         if not self._user:
             self._user = getpass.getuser()
-            return self._user
+        return self._user
 
     def log(self, level, message, *args, **kwargs):
         """
